@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info:
+  title: url-service API
+  version: 0.1.0
+paths:
+  /links:
+    $ref: "./paths/links.yaml"
+components:
+  schemas:
+    CreateLinkRequest:
+      $ref: "./schemas/CreateLinkRequest.yaml"
+    CreateLinkResponse:
+      $ref: "./schemas/CreateLinkResponse.yaml"
+    ErrorResponse:
+      $ref: "./schemas/ErrorResponse.yaml"
