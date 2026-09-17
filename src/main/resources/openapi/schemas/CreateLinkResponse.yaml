@@ -1,0 +1,13 @@
+type: object
+required:
+  - shortCode
+  - shortUrl
+  - managementToken
+properties:
+  shortCode:
+    type: string
+  shortUrl:
+    type: string
+    format: uri
+  managementToken:
+    type: string

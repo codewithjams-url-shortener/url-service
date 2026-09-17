@@ -1,0 +1,15 @@
+type: object
+required:
+  - longUrl
+properties:
+  longUrl:
+    type: string
+    format: uri
+  customAlias:
+    type: string
+    pattern: '^[a-zA-Z0-9]+$'
+    minLength: 3
+    maxLength: 32
+  expiresAt:
+    type: string
+    format: date-time

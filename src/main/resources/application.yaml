@@ -25,3 +25,21 @@ management:
 
 server:
   port: 5233
+
+logging:
+  level:
+    io.urlshortener: INFO
+
+aws:
+  region: us-west-2
+  credential:
+    access-key: test
+    secret-key: test
+  dynamodb:
+    endpoint-override: http://localhost:4566
+    tables:
+      links-table: "Links"
+
+url-shortener:
+  base-url: http://shortify.com/
+  short-code-length: 7
