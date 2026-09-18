@@ -1,6 +1,7 @@
 package io.urlshortener.urlservice.exception;
 
 import io.urlshortener.urlservice.model.dataTransferObject.ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class ControllerAdvice {
 	 * @return a {@code 400 Bad Request} response listing each invalid field and its violation.
 	 */
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ErrorResponse> handleValidationError(final MethodArgumentNotValidException e) {
+	public ResponseEntity<ErrorResponse> handleMethodArgumentValidationError(final MethodArgumentNotValidException e) {
 		final String message = e.getBindingResult()
 				.getFieldErrors()
 				.stream()
@@ -33,9 +34,50 @@ public class ControllerAdvice {
 				.collect(Collectors.joining(", "));
 		log.atError()
 				.addKeyValue("reason", message)
-				.log("Request validation failed");
+				.log("Request validation failed due to Invalid Method Arguments");
 		final ErrorResponse response = ErrorResponse.builder().message(message).build();
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	}
+
+	/**
+	 * Maps a method/path parameter validation failure (e.g. a {@code @PathVariable} violating an
+	 * OpenAPI-declared constraint) to a structured error response instead of Spring's default error
+	 * body. This is a distinct exception type from {@link MethodArgumentNotValidException}, which
+	 * only covers {@code @Valid @RequestBody} failures.
+	 *
+	 * @param e the validation exception raised when a method/path parameter fails bean validation.
+	 * @return a {@code 400 Bad Request} response listing each invalid parameter and its violation.
+	 */
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ErrorResponse> handleConstraintViolationError(final ConstraintViolationException e) {
+		final String message = e.getConstraintViolations()
+				.stream()
+				.map(violation -> {
+					final String propertyPath = violation.getPropertyPath().toString();
+					final String field = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
+					return "%s: %s".formatted(field, violation.getMessage());
+				})
+				.collect(Collectors.joining(", "));
+		log.atError()
+				.addKeyValue("reason", message)
+				.log("Request validation failed due to Input Constraint Violation");
+		final ErrorResponse response = ErrorResponse.builder().message(message).build();
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	}
+
+	/**
+	 * Maps a missing or expired link to a not-found response.
+	 *
+	 * @param e the not-found exception raised by a controller.
+	 * @return a {@code 404 Not Found} response carrying the exception's message.
+	 */
+	@ExceptionHandler(ShortLinkNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNotFound(final ShortLinkNotFoundException e) {
+		log.atError()
+				.addKeyValue("shortCode", e.getShortCode())
+				.log("Short Code not found");
+		final ErrorResponse response = ErrorResponse.builder().message(e.getMessage()).build();
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 	}
 
 	/**

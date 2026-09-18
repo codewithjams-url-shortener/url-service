@@ -1,0 +1,25 @@
+type: object
+required:
+  - shortCode
+  - longUrl
+  - createdAt
+  - status
+properties:
+  shortCode:
+    type: string
+    description: Short Code of the Long URL.
+  longUrl:
+    type: string
+    format: uri
+    description: Long URL which was shorted.
+  createdAt:
+    type: string
+    format: date-time
+    description: Time at which this Short Link was created.
+  expiresAt:
+    type: string
+    format: date-time
+    description: Time at which this Short Link will get expired.
+  status:
+    type: string
+    description: Status of this Short Link.

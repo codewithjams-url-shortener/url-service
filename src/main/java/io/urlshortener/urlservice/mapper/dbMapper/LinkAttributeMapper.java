@@ -84,4 +84,17 @@ public class LinkAttributeMapper implements AttributeMapper<Link> {
 		return new Link(shortCode, longUrl, ownerId, createdAt, expiresAt, managementTokenHash, status);
 	}
 
+	/**
+	 * Builds the DynamoDB key attribute map identifying a link by its short code (the table's
+	 * partition key), for use in a {@code GetItem} request.
+	 *
+	 * @param shortCode the short code to build a key for.
+	 * @return a single-entry attribute-value map suitable as a DynamoDB item key.
+	 */
+	public Map<String, AttributeValue> createKeyAttribute(final String shortCode) {
+		final Map<String, AttributeValue> map = new HashMap<>();
+		map.put("shortCode", AttributeValue.builder().s(shortCode).build());
+		return map;
+	}
+
 }

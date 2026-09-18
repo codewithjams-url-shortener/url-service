@@ -5,6 +5,8 @@ info:
 paths:
   /links:
     $ref: "./paths/links.yaml"
+  /links/{shortCode}:
+    $ref: "./paths/links-shortCode.yaml"
 components:
   schemas:
     CreateLinkRequest:

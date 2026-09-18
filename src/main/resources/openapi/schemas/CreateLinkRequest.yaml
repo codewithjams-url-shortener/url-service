@@ -13,3 +13,4 @@ properties:
   expiresAt:
     type: string
     format: date-time
+    x-field-extra-annotation: "@jakarta.validation.constraints.Future"
