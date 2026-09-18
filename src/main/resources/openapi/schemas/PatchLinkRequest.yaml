@@ -1,0 +1,12 @@
+type: object
+properties:
+  longUrl:
+    type: string
+    format: uri
+    description: Long URL which was shorted.
+  expiresAt:
+    type: string
+    format: date-time
+    nullable: true
+    x-field-extra-annotation: "@jakarta.validation.constraints.Future"
+    description: Time at which this Short Link will get expired.

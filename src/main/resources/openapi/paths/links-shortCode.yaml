@@ -1,14 +1,14 @@
+parameters:
+  - in: path
+    name: shortCode
+    description: Short Code to be fetched
+    required: true
+    schema:
+      type: string
+      minLength: 3
 get:
   operationId: getLink
   summary: Get details of a Short Link
-  parameters:
-    - in: path
-      name: shortCode
-      description: Short Code to be fetched
-      required: true
-      schema:
-        type: string
-        minLength: 3
   responses:
     "200":
       description: Fetched Short Link
@@ -18,6 +18,56 @@ get:
             $ref: "../schemas/GetLinkResponse.yaml"
     "400":
       description: shortCode failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    "404":
+      description: Short Link not found
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+patch:
+  operationId: updateLink
+  summary: Update a Short Link
+  parameters:
+    - name: X-Management-Token
+      description: >-
+        Management token authorizing this edit. Required to succeed, but declared optional here
+        so a missing header binds as null and is handled the same way as a mismatched token
+        (403), rather than Spring's default 400 for a missing required header.
+      in: header
+      required: false
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/PatchLinkRequest.yaml"
+  responses:
+    "200":
+      description: Updated Short Link
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/GetLinkResponse.yaml"
+    "400":
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    "403":
+      description: Management token missing or does not match
       content:
         application/json:
           schema:

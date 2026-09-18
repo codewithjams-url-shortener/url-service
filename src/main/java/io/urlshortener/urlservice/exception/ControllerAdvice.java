@@ -66,6 +66,34 @@ public class ControllerAdvice {
 	}
 
 	/**
+	 * Maps an empty patch (no fields to update) to a bad-request response.
+	 *
+	 * @param e the empty-patch exception raised by a controller.
+	 * @return a {@code 400 Bad Request} response carrying the exception's message.
+	 */
+	@ExceptionHandler(NoUpdatableFieldsProvidedException.class)
+	public ResponseEntity<ErrorResponse> handleNoUpdatableFieldProvidedError(final NoUpdatableFieldsProvidedException e) {
+		log.atError().log("No Fields provided for Update");
+		final ErrorResponse response = ErrorResponse.builder().message(e.getMessage()).build();
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	}
+
+	/**
+	 * Maps a missing or mismatched management token to an access-denied response.
+	 *
+	 * @param e the token-mismatch exception raised by a controller.
+	 * @return a {@code 403 Forbidden} response carrying the exception's message.
+	 */
+	@ExceptionHandler(ManagementTokenMismatchException.class)
+	public ResponseEntity<ErrorResponse> handleManagementTokenMismatchError(final ManagementTokenMismatchException e) {
+		log.atError()
+				.addKeyValue("shortCode", e.getShortCode())
+				.log("Management Token did not match");
+		final ErrorResponse response = ErrorResponse.builder().message(e.getMessage()).build();
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+	}
+
+	/**
 	 * Maps a missing or expired link to a not-found response.
 	 *
 	 * @param e the not-found exception raised by a controller.
