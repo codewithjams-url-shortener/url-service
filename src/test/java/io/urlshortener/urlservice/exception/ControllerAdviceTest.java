@@ -154,6 +154,63 @@ class ControllerAdviceTest {
 	}
 
 	@Test
+	void handleNoUpdatableFieldProvidedError_shouldReturn400_whenPatchHasNoChanges() {
+		// Arrange
+		final NoUpdatableFieldsProvidedException exception =
+				new NoUpdatableFieldsProvidedException("No Fields provided for update");
+
+		// Act
+		final ResponseEntity<ErrorResponse> response =
+				controllerAdvice.handleNoUpdatableFieldProvidedError(exception);
+
+		// Assert
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void handleNoUpdatableFieldProvidedError_shouldReturnExceptionMessage_whenPatchHasNoChanges() {
+		// Arrange
+		final NoUpdatableFieldsProvidedException exception =
+				new NoUpdatableFieldsProvidedException("No Fields provided for update");
+
+		// Act
+		final ResponseEntity<ErrorResponse> response =
+				controllerAdvice.handleNoUpdatableFieldProvidedError(exception);
+
+		// Assert
+		assertNotNull(response.getBody());
+		assertThat(response.getBody().getMessage()).isEqualTo("No Fields provided for update");
+	}
+
+	@Test
+	void handleManagementTokenMismatchError_shouldReturn403_whenTokenDoesNotMatch() {
+		// Arrange
+		final ManagementTokenMismatchException exception = new ManagementTokenMismatchException("abc1234");
+
+		// Act
+		final ResponseEntity<ErrorResponse> response =
+				controllerAdvice.handleManagementTokenMismatchError(exception);
+
+		// Assert
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+	}
+
+	@Test
+	void handleManagementTokenMismatchError_shouldReturnExceptionMessage_whenTokenDoesNotMatch() {
+		// Arrange
+		final ManagementTokenMismatchException exception = new ManagementTokenMismatchException("abc1234");
+
+		// Act
+		final ResponseEntity<ErrorResponse> response =
+				controllerAdvice.handleManagementTokenMismatchError(exception);
+
+		// Assert
+		assertNotNull(response.getBody());
+		assertThat(response.getBody().getMessage())
+				.isEqualTo("Management Token did not match for Short Code: abc1234");
+	}
+
+	@Test
 	void handleNotFound_shouldReturn404_whenShortLinkIsNotFound() {
 		// Arrange
 		final ShortLinkNotFoundException exception = new ShortLinkNotFoundException("missing");
