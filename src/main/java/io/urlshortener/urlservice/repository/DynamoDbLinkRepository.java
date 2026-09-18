@@ -12,7 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+
+import java.util.Optional;
 
 /**
  * {@link LinkRepository} implementation backed by DynamoDB, using the raw SDK client and a conditional write to enforce
@@ -73,6 +77,26 @@ public class DynamoDbLinkRepository implements LinkRepository {
 				.addKeyValue("longUrl", link.longUrl())
 				.log("Link saved successfully");
 		return linkDbMapper.toDomain(link);
+	}
+
+	/**
+	 * Looks up a link by its short code.
+	 *
+	 * @param shortCode the short code to look up.
+	 * @return the matching link, or {@link Optional#empty()} if no item exists for that short code.
+	 */
+	@Override
+	public Optional<ShortLink> findByShortCode(final String shortCode) {
+		final GetItemRequest readRequest = GetItemRequest.builder()
+				.tableName(awsProperties.getDynamoDb().getTables().get(AwsConstants.TABLE_LINKS))
+				.key(linkAttributeMapper.createKeyAttribute(shortCode))
+				.build();
+		final GetItemResponse response = dynamoDbClient.getItem(readRequest);
+		if (!response.hasItem()) {
+			return Optional.empty();
+		}
+		final Link link = linkAttributeMapper.toObject(response.item());
+		return Optional.of(linkDbMapper.toDomain(link));
 	}
 
 }

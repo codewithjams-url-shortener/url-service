@@ -1,0 +1,36 @@
+get:
+  operationId: getLink
+  summary: Get details of a Short Link
+  parameters:
+    - in: path
+      name: shortCode
+      description: Short Code to be fetched
+      required: true
+      schema:
+        type: string
+        minLength: 3
+  responses:
+    "200":
+      description: Fetched Short Link
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/GetLinkResponse.yaml"
+    "400":
+      description: shortCode failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    "404":
+      description: Short Link not found
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"

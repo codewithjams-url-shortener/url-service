@@ -156,6 +156,19 @@ class LinkAttributeMapperTest {
 	}
 
 	@Test
+	void createKeyAttribute_shouldContainOnlyShortCode_whenGivenAShortCode() {
+		// Arrange
+		// (shortCode literal used directly below)
+
+		// Act
+		final Map<String, AttributeValue> keyMap = mapper.createKeyAttribute("abc1234");
+
+		// Assert
+		assertThat(keyMap).hasSize(1);
+		assertThat(keyMap.get("shortCode").s()).isEqualTo("abc1234");
+	}
+
+	@Test
 	void toAttributeValueThenToObject_shouldPreserveAllFields_whenRoundTrippingALink() {
 		// Arrange
 		final Link original = new Link(
