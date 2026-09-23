@@ -3,7 +3,7 @@ package io.urlshortener.urlservice.mapper.responseMapper;
 import io.urlshortener.urlservice.model.dataTransferObject.CreateLinkResponse;
 import io.urlshortener.urlservice.model.domainObject.ShortLink;
 import io.urlshortener.urlservice.model.result.CreateLinkResult;
-import io.urlshortener.urlservice.property.UrlShortenerProperties;
+import io.urlshortener.urlservice.property.ShortUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +16,10 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class CreateLinkResponseMapper implements ResponseMapper<CreateLinkResult, CreateLinkResponse> {
 
-	/** Source of the base URL that generated short codes are resolved against. */
-	private final UrlShortenerProperties shortenerProperties;
+	/**
+	 * Resolves the created link's short code into its public short URL.
+	 */
+	private final ShortUrlBuilder urlBuilder;
 
 	/**
 	 * Converts a {@link CreateLinkResult} into a {@link CreateLinkResponse}.
@@ -29,7 +31,7 @@ public class CreateLinkResponseMapper implements ResponseMapper<CreateLinkResult
 	@Override
 	public CreateLinkResponse toDto(final CreateLinkResult result) {
 		final ShortLink shortLink = result.shortLink();
-		final URI shortUrl = URI.create(shortenerProperties.getBaseUrl()).resolve(shortLink.getShortCode());
+		final URI shortUrl = urlBuilder.build(shortLink.getShortCode());
 		return CreateLinkResponse.builder()
 				.shortCode(shortLink.getShortCode())
 				.shortUrl(shortUrl)

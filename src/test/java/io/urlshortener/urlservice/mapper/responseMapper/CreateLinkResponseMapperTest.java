@@ -3,6 +3,7 @@ package io.urlshortener.urlservice.mapper.responseMapper;
 import io.urlshortener.urlservice.model.dataTransferObject.CreateLinkResponse;
 import io.urlshortener.urlservice.model.domainObject.ShortLink;
 import io.urlshortener.urlservice.model.result.CreateLinkResult;
+import io.urlshortener.urlservice.property.ShortUrlBuilder;
 import io.urlshortener.urlservice.property.UrlShortenerProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,8 @@ class CreateLinkResponseMapperTest {
 	@BeforeEach
 	void setUp() {
 		shortenerProperties = new UrlShortenerProperties();
-		shortenerProperties.setBaseUrl("http://shortify.com/");
-		mapper = new CreateLinkResponseMapper(shortenerProperties);
+		shortenerProperties.setBaseUrl("https://shortify.com/");
+		mapper = new CreateLinkResponseMapper(new ShortUrlBuilder(shortenerProperties));
 	}
 
 	@Test
@@ -65,7 +66,7 @@ class CreateLinkResponseMapperTest {
 	@Test
 	void toDto_shouldResolveShortUrlAgainstBaseUrl_whenBaseUrlHasTrailingSlash() {
 		// Arrange
-		shortenerProperties.setBaseUrl("http://shortify.com/");
+		shortenerProperties.setBaseUrl("https://shortify.com/");
 		final ShortLink shortLink = ShortLink.builder()
 				.shortCode("abc1234")
 				.longUrl("https://example.com")
@@ -76,13 +77,13 @@ class CreateLinkResponseMapperTest {
 		final CreateLinkResponse response = mapper.toDto(new CreateLinkResult(shortLink, "token"));
 
 		// Assert
-		assertThat(response.getShortUrl()).isEqualTo(URI.create("http://shortify.com/abc1234"));
+		assertThat(response.getShortUrl()).isEqualTo(URI.create("https://shortify.com/abc1234"));
 	}
 
 	@Test
 	void toDto_shouldResolveShortUrlCorrectly_whenBaseUrlHasNoTrailingSlash() {
 		// Arrange
-		shortenerProperties.setBaseUrl("http://shortify.com");
+		shortenerProperties.setBaseUrl("https://shortify.com");
 		final ShortLink shortLink = ShortLink.builder()
 				.shortCode("abc1234")
 				.longUrl("https://example.com")

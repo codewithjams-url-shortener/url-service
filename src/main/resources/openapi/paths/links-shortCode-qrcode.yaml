@@ -1,0 +1,39 @@
+parameters:
+  - $ref: "../openapi.yaml#/components/parameters/ShortCodePathParam"
+  - in: query
+    name: size
+    required: false
+    schema:
+      type: integer
+      default: 300
+      minimum: 100
+      maximum: 1000
+get:
+  operationId: getQrCode
+  summary: Get QR Code of a Short Link
+  responses:
+    "200":
+      description: Generated QR Code
+      content:
+        image/png:
+          schema:
+            type: string
+            format: binary
+    "400":
+      description: shortCode failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    "404":
+      description: Short Link not found
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/ErrorResponse.yaml"

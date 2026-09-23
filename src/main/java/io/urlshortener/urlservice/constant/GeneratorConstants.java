@@ -15,6 +15,8 @@ public class GeneratorConstants {
 	 */
 	public static final int CHARACTER_BOUND = 62; // 62 = 26 a-z + 26 A-Z + 10 0-9
 
+	public static final String QR_CODE_FILE_FORMAT = "PNG";
+
 	/**
 	 * Not instantiable.
 	 */

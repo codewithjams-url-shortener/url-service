@@ -4,6 +4,7 @@ import io.urlshortener.urlservice.mapper.requestMapper.CreateLinkRequestMapper;
 import io.urlshortener.urlservice.mapper.requestMapper.PatchLinkRequestMapper;
 import io.urlshortener.urlservice.mapper.responseMapper.CreateLinkResponseMapper;
 import io.urlshortener.urlservice.mapper.responseMapper.GetLinkResponseMapper;
+import io.urlshortener.urlservice.mapper.responseMapper.GetQrCodeResponseMapper;
 import io.urlshortener.urlservice.model.dataTransferObject.CreateLinkRequest;
 import io.urlshortener.urlservice.model.dataTransferObject.CreateLinkResponse;
 import io.urlshortener.urlservice.model.dataTransferObject.GetLinkResponse;
@@ -11,13 +12,12 @@ import io.urlshortener.urlservice.model.dataTransferObject.PatchLinkRequest;
 import io.urlshortener.urlservice.model.domainObject.LinkPatch;
 import io.urlshortener.urlservice.model.domainObject.ShortLink;
 import io.urlshortener.urlservice.model.result.CreateLinkResult;
-import io.urlshortener.urlservice.service.CreateLinkService;
-import io.urlshortener.urlservice.service.DeleteLinkService;
-import io.urlshortener.urlservice.service.GetLinkService;
-import io.urlshortener.urlservice.service.UpdateLinkService;
+import io.urlshortener.urlservice.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,6 +50,11 @@ public class LinksController implements LinksApi {
 	private final DeleteLinkService deleteLinkService;
 
 	/**
+	 * Orchestrates QR code generation, including the same expiry checking as fetching a link.
+	 */
+	private final GetQrCodeService getQrCodeService;
+
+	/**
 	 * Converts the incoming request DTO into a domain object.
 	 */
 	private final CreateLinkRequestMapper createLinkRequestMapper;
@@ -68,6 +73,11 @@ public class LinksController implements LinksApi {
 	 * Converts the incoming patch request DTO into a domain object.
 	 */
 	private final PatchLinkRequestMapper patchLinkRequestMapper;
+
+	/**
+	 * Converts the generated QR code image into the outgoing response.
+	 */
+	private final GetQrCodeResponseMapper getQrCodeResponseMapper;
 
 	/**
 	 * Creates a new short link.
@@ -126,6 +136,23 @@ public class LinksController implements LinksApi {
 	public ResponseEntity<Void> deleteLink(final String shortCode, final String xManagementToken) {
 		deleteLinkService.deleteLink(shortCode, xManagementToken);
 		return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Generates a QR code encoding an existing short link's public URL.
+	 *
+	 * @param shortCode the short code to look up.
+	 * @param size      the width and height of the generated image, in pixels.
+	 * @return {@code 200 OK} with the PNG-encoded QR code image.
+	 */
+	@Override
+	public ResponseEntity<Resource> getQrCode(final String shortCode, final Integer size) {
+		final byte[] qrCodeBytes = getQrCodeService.getQrCode(shortCode, size);
+		final Resource resource = getQrCodeResponseMapper.toDto(qrCodeBytes);
+		return ResponseEntity
+				.ok()
+				.contentType(MediaType.IMAGE_PNG)
+				.body(resource);
 	}
 
 }

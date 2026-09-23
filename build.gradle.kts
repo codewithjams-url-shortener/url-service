@@ -35,6 +35,8 @@ dependencies {
 	implementation("software.amazon.awssdk:dynamodb:2.54.13")
 	implementation("io.url-shortener:service-common:0.1.0")
 	implementation("io.url-shortener:links-contract:0.1.0")
+	implementation("com.google.zxing:core:3.5.3")
+	implementation("com.google.zxing:javase:3.5.3")
 
 	// Required by openapi-generator's "spring" output (interfaceOnly): the generated API
 	// interface uses Swagger's OpenAPI 3 annotations, and generated models use JsonNullable
