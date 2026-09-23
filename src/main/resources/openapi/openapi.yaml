@@ -7,6 +7,8 @@ paths:
     $ref: "./paths/links.yaml"
   /links/{shortCode}:
     $ref: "./paths/links-shortCode.yaml"
+  /links/{shortCode}/qrcode:
+    $ref: "./paths/links-shortCode-qrcode.yaml"
 components:
   schemas:
     CreateLinkRequest:
@@ -15,3 +17,12 @@ components:
       $ref: "./schemas/CreateLinkResponse.yaml"
     ErrorResponse:
       $ref: "./schemas/ErrorResponse.yaml"
+  parameters:
+    ShortCodePathParam:
+      in: path
+      name: shortCode
+      description: Short Code to be fetched
+      required: true
+      schema:
+        type: string
+        minLength: 3
