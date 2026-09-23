@@ -1,0 +1,9 @@
+# Tunable constants for the integrationTest source set. Kept separate from run-specific values
+# (integration-test.app-jar, integration-test.base-url), which are supplied per-invocation via Gradle
+# system properties instead, since they're targets for a given run rather than fixed constants.
+integration-test:
+  local:
+    table-name: Links
+    partition-key: shortCode
+    health-check-timeout: 30s
+    health-check-poll-interval: 500ms
