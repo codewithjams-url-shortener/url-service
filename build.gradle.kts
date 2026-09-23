@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 plugins {
 	java
 	id("org.springframework.boot") version "3.5.6"
@@ -25,6 +27,15 @@ dependencyManagement {
 	}
 }
 
+// Deliberately isolated from `main`: this source set has no compile-time dependency on url-service's
+// own classes (no UrlServiceApplication, no generated DTOs, no AwsProperties/AwsConstants). It treats
+// url-service purely as an HTTP black box - "local" launches the real built jar as a separate OS
+// process (see LocalEnvironmentConfig), "deployed" just points at a configured URL - and talks JSON
+// over the wire rather than sharing Java types with the app it's testing.
+sourceSets {
+	create("integrationTest")
+}
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -50,12 +61,37 @@ dependencies {
 	compileOnly("org.projectlombok:lombok:1.18.48")
 	annotationProcessor("org.projectlombok:lombok:1.18.48")
 
-	testImplementation("io.floci:testcontainers-floci:1.15.0")
-	testImplementation("org.testcontainers:junit-jupiter")
+	"integrationTestImplementation"("org.springframework.boot:spring-boot-starter-web")
+	"integrationTestImplementation"("org.springframework.boot:spring-boot-starter-test")
+	"integrationTestImplementation"("software.amazon.awssdk:dynamodb:2.54.13")
+	"integrationTestImplementation"("io.floci:testcontainers-floci:1.15.0")
+	"integrationTestImplementation"("org.testcontainers:junit-jupiter")
+	"integrationTestRuntimeOnly"("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.register<Test>("localIntegrationTest") {
+	description = "Runs the shared integration tests with a Testcontainers-backed floci instance and " +
+			"the built app launched as a separate process (spring.profiles.active=local)."
+	group = "verification"
+	dependsOn(tasks.named("bootJar"))
+	testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+	classpath = sourceSets["integrationTest"].runtimeClasspath
+	systemProperty("spring.profiles.active", "local")
+	systemProperty("integration-test.app-jar", tasks.named<BootJar>("bootJar").get().archiveFile.get().asFile.path)
+}
+
+tasks.register<Test>("integrationTest") {
+	description = "Runs the shared integration tests against an already-deployed url-service instance " +
+			"(spring.profiles.active=deployed). Pass the target with -PbaseUrl=https://...."
+	group = "verification"
+	testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+	classpath = sourceSets["integrationTest"].runtimeClasspath
+	systemProperty("spring.profiles.active", "deployed")
+	systemProperty("integration-test.base-url", (project.findProperty("baseUrl") as String?) ?: "")
 }
 
 openApiGenerate {
@@ -72,10 +108,8 @@ openApiGenerate {
 	}
 }
 
-sourceSets {
-	main {
-		java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/java"))
-	}
+sourceSets.main {
+	java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/java"))
 }
 
 tasks.compileJava {
