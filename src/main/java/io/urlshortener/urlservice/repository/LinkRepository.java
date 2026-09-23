@@ -44,4 +44,17 @@ public interface LinkRepository {
 	ShortLink update(final String shortCode, final String managementTokenHash, final LinkPatch patch)
 			throws ShortLinkNotFoundException, ManagementTokenMismatchException;
 
+	/**
+	 * Deletes an existing link, gated by its management token hash. Unlike {@link #findByShortCode},
+	 * this is not blocked by expiry — an expired link can still be deleted with a valid token.
+	 *
+	 * @param shortCode           the short code of the link to delete.
+	 * @param managementTokenHash the caller-presented token's hash, checked against the link's own.
+	 * @throws ShortLinkNotFoundException       if no link exists for that short code.
+	 * @throws ManagementTokenMismatchException if the link exists but {@code managementTokenHash}
+	 *                                           does not match its stored hash.
+	 */
+	void delete(final String shortCode, final String managementTokenHash)
+			throws ShortLinkNotFoundException, ManagementTokenMismatchException;
+
 }

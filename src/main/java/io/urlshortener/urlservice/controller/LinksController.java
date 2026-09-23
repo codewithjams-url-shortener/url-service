@@ -12,6 +12,7 @@ import io.urlshortener.urlservice.model.domainObject.LinkPatch;
 import io.urlshortener.urlservice.model.domainObject.ShortLink;
 import io.urlshortener.urlservice.model.result.CreateLinkResult;
 import io.urlshortener.urlservice.service.CreateLinkService;
+import io.urlshortener.urlservice.service.DeleteLinkService;
 import io.urlshortener.urlservice.service.GetLinkService;
 import io.urlshortener.urlservice.service.UpdateLinkService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,11 @@ public class LinksController implements LinksApi {
 	 * Orchestrates the link-edit business logic, including management-token verification.
 	 */
 	private final UpdateLinkService updateLinkService;
+
+	/**
+	 * Orchestrates the link-deletion business logic, including management-token verification.
+	 */
+	private final DeleteLinkService deleteLinkService;
 
 	/**
 	 * Converts the incoming request DTO into a domain object.
@@ -106,6 +112,20 @@ public class LinksController implements LinksApi {
 		final ShortLink link = updateLinkService.updateLink(shortCode, xManagementToken, patch);
 		final GetLinkResponse response = getLinkResponseMapper.toDto(link);
 		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * Deletes an existing short link.
+	 *
+	 * @param shortCode        the short code of the link to delete.
+	 * @param xManagementToken the caller-presented management token; may be {@code null} if the
+	 *                         header was omitted.
+	 * @return {@code 204 No Content} once the link has been deleted.
+	 */
+	@Override
+	public ResponseEntity<Void> deleteLink(final String shortCode, final String xManagementToken) {
+		deleteLinkService.deleteLink(shortCode, xManagementToken);
+		return ResponseEntity.noContent().build();
 	}
 
 }

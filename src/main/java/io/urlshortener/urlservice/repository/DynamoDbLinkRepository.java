@@ -146,4 +146,44 @@ public class DynamoDbLinkRepository implements LinkRepository {
 		return linkDbMapper.toDomain(link);
 	}
 
+	/**
+	 * Deletes an existing link via a conditional {@code DeleteItem}, atomically checking both that
+	 * the item exists and that its management token hash matches.
+	 *
+	 * @param shortCode           the short code of the link to delete.
+	 * @param managementTokenHash the caller-presented token's hash, checked against the link's own.
+	 * @throws ShortLinkNotFoundException       if no item exists for that short code.
+	 * @throws ManagementTokenMismatchException if the item exists but {@code managementTokenHash}
+	 *                                          does not match its stored hash.
+	 */
+	@Override
+	public void delete(final String shortCode, final String managementTokenHash)
+			throws ShortLinkNotFoundException, ManagementTokenMismatchException {
+		final Map<String, AttributeValue> expressionValues = Map.of(
+				":expectedHash",
+				AttributeValue.builder().s(managementTokenHash).build()
+		);
+		final DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
+				.tableName(awsProperties.getDynamoDb().getTables().get(AwsConstants.TABLE_LINKS))
+				.key(linkAttributeMapper.createKeyAttribute(shortCode))
+				.conditionExpression("attribute_exists(shortCode) AND managementTokenHash = :expectedHash")
+				.expressionAttributeValues(expressionValues)
+				.build();
+		try {
+			dynamoDbClient.deleteItem(deleteRequest);
+		} catch (ConditionalCheckFailedException e) {
+			log.atError()
+					.addKeyValue("reason", "One of the condition among 'attribute_exists(shortCode)' and "
+							+ "'managementTokenHash = :expectedHash' has failed")
+					.addKeyValue("shortCode", shortCode)
+					.setCause(e)
+					.log("Error while deleting Link");
+			// There's a small theoretical TOCTOU window between the failed write and this read.
+			if (findByShortCode(shortCode).isPresent()) {
+				throw new ManagementTokenMismatchException(shortCode);
+			}
+			throw new ShortLinkNotFoundException(shortCode);
+		}
+	}
+
 }
