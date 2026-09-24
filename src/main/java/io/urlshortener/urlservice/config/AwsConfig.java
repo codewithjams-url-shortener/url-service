@@ -1,5 +1,7 @@
 package io.urlshortener.urlservice.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.urlshortener.urlservice.metrics.DynamoDbThrottleMetricPublisher;
 import io.urlshortener.urlservice.property.AwsProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.metrics.MetricPublisher;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -78,6 +82,20 @@ public class AwsConfig {
 	}
 
 	/**
+	 * Builds the metric publisher that counts throttled DynamoDB request attempts.
+	 *
+	 * @param meterRegistry the registry the resulting counter is registered against.
+	 * @return a {@link MetricPublisher} wired into the {@link DynamoDbClient} below.
+	 */
+	@Bean
+	public MetricPublisher dynamoDbThrottleMetricPublisher(final MeterRegistry meterRegistry) {
+		log.atDebug()
+				.addKeyValue("bean", MetricPublisher.class.getSimpleName())
+				.log("Bean: DynamoDbThrottleMetricPublisher created");
+		return new DynamoDbThrottleMetricPublisher(meterRegistry);
+	}
+
+	/**
 	 * Builds the DynamoDB client used by the repository layer.
 	 *
 	 * @param region              the AWS region to target.
@@ -86,7 +104,8 @@ public class AwsConfig {
 	 * (e.g. for local development against floci).
 	 */
 	@Bean
-	public DynamoDbClient dynamoDbClient(final Region region, final AwsCredentialsProvider credentialsProvider) {
+	public DynamoDbClient dynamoDbClient(final Region region, final AwsCredentialsProvider credentialsProvider,
+										 final MetricPublisher dynamoDbThrottleMetricPublisher) {
 		final String url = awsProperties.getDynamoDb().getEndpointOverride();
 		final URI endpoint = URI.create(url);
 		log.atDebug()
@@ -99,6 +118,11 @@ public class AwsConfig {
 				.region(region)
 				.endpointOverride(endpoint)
 				.credentialsProvider(credentialsProvider)
+				.overrideConfiguration(
+						ClientOverrideConfiguration.builder()
+								.addMetricPublisher(dynamoDbThrottleMetricPublisher)
+								.build()
+				)
 				.build();
 	}
 
