@@ -29,6 +29,9 @@ server:
 logging:
   level:
     io.urlshortener: INFO
+  structured:
+    format:
+      console: ecs
 
 aws:
   region: us-west-2
