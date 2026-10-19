@@ -42,7 +42,12 @@ aws:
     endpoint-override: http://localhost:4566
     tables:
       links-table: "Links"
+  cloudwatch:
+    endpoint-override: http://localhost:4566
 
 url-shortener:
   base-url: http://shortify.com/
   short-code-length: 7
+  http-metrics:
+    enabled: true
+    publish-interval: PT1M

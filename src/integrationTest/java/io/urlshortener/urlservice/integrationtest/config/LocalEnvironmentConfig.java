@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClientException;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
@@ -35,9 +36,11 @@ import java.time.Instant;
  *     {@link DeployedEnvironmentConfig} supplies the equivalent bean for the {@code deployed} profile.
  * </p>
  *
- * <p>The table name, partition key, and health-check timing below are read from {@code application.yaml}
- * via {@link LocalTestSettings} rather than hardcoded - see its Javadoc for why that reads the file
- * standalone instead of through {@code @Value}.
+ * <p>
+ *     The table name, partition key, and health-check timing below are read from {@code application.yaml}
+ *     via {@link LocalTestSettings} rather than hardcoded - see its Javadoc for why that reads the file
+ *     standalone instead of through {@code @Value}.
+ * </p>
  */
 @Configuration
 @Profile("local")
@@ -90,6 +93,9 @@ public class LocalEnvironmentConfig {
 				"-Daws.credential.access-key=" + floci.getAccessKey(),
 				"-Daws.credential.secret-key=" + floci.getSecretKey(),
 				"-Daws.dynamodb.tables.links-table=" + LocalTestSettings.tableName(),
+				"-Daws.cloudwatch.endpoint-override=" + floci.getEndpoint(),
+				// Publish every second instead of every minute, so the tests need not wait a minute to see the counts.
+				"-Durl-shortener.http-metrics.publish-interval=PT1S",
 				"-jar", appJarPath
 		);
 		processBuilder.redirectErrorStream(true);
@@ -97,6 +103,35 @@ public class LocalEnvironmentConfig {
 		final Process process = processBuilder.start();
 		waitUntilHealthy(port, process);
 		return new LocalUrlServiceInstance(process, port);
+	}
+
+	/**
+	 * Reads CloudWatch from the same floci the launched url-service publishes its metrics to.
+	 */
+	@Bean(destroyMethod = "close")
+	public CloudWatchClient flociCloudWatchClient() {
+		return CloudWatchClient.builder()
+				.endpointOverride(URI.create(floci.getEndpoint()))
+				.region(Region.of(floci.getRegion()))
+				.credentialsProvider(
+						StaticCredentialsProvider.create(
+								AwsBasicCredentials.create(floci.getAccessKey(), floci.getSecretKey())
+						)
+				)
+				.build();
+	}
+
+	/**
+	 * Plants a link item that cannot be read back, straight into floci's DynamoDB, so a test can make the launched
+	 * url-service answer with a genuine 500 without any test-only hook in the application.
+	 */
+	@Bean
+	public CorruptLinkSeeder corruptLinkSeeder() {
+		return new CorruptLinkSeeder(
+				LocalEnvironmentConfig::buildDynamoDbClient,
+				LocalTestSettings.tableName(),
+				LocalTestSettings.partitionKey()
+		);
 	}
 
 	@Bean
