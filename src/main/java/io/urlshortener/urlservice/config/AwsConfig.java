@@ -15,14 +15,16 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.metrics.MetricPublisher;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.net.URI;
 import java.util.Objects;
 
 /**
- * Provides the AWS SDK beans (region, credentials, and the DynamoDB client) used throughout url-service, configured
- * from {@link AwsProperties}.
+ * Provides the AWS SDK beans (region, credentials, and the DynamoDB and CloudWatch clients) used throughout
+ * url-service, configured from {@link AwsProperties}.
  */
 @Slf4j
 @Configuration
@@ -124,6 +126,34 @@ public class AwsConfig {
 								.build()
 				)
 				.build();
+	}
+
+	/**
+	 * Builds the CloudWatch client used to publish the HTTP response counts the AppConfig rollback alarm reads.
+	 *
+	 * @param region              the AWS region to target.
+	 * @param credentialsProvider the credentials to authenticate with.
+	 * @return a {@link CloudWatchClient}, pointed at the configured endpoint override when there is one (e.g. for local
+	 * development against floci) and at the real AWS endpoint otherwise.
+	 */
+	@Bean
+	public CloudWatchClient cloudWatchClient(final Region region, final AwsCredentialsProvider credentialsProvider) {
+		final String url = Objects.nonNull(awsProperties.getCloudWatch())
+				? awsProperties.getCloudWatch().getEndpointOverride()
+				: null;
+		log.atDebug()
+				.addKeyValue("bean", CloudWatchClient.class.getSimpleName())
+				.addKeyValue("region.present", Objects.nonNull(region))
+				.addKeyValue("credentialsProvider.present", Objects.nonNull(credentialsProvider))
+				.addKeyValue("endpoint-override.present", StringUtils.hasText(url))
+				.log("Bean: CloudWatchClient created");
+		final CloudWatchClientBuilder builder = CloudWatchClient.builder()
+				.region(region)
+				.credentialsProvider(credentialsProvider);
+		if (StringUtils.hasText(url)) {
+			builder.endpointOverride(URI.create(url));
+		}
+		return builder.build();
 	}
 
 }
